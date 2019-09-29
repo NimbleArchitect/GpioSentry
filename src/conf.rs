@@ -17,7 +17,7 @@ pub struct PinConfig {
     pub label: String,
     pub location: String,
     pub method: u8,
-    pub pin: i8,
+    pub pin: u8,
     pub state: u8,
     pub trigger: u8,
 }
@@ -26,7 +26,7 @@ impl Default for PinConfig {
     fn default () -> PinConfig {
         PinConfig{
             data: "".to_string(), delay: 0, label: "".to_string(), location: "".to_string(), 
-            method: 0, pin: -1, state: 0, trigger: 0
+            method: 0, pin: 255, state: 0, trigger: 0
         }
     }
 }
@@ -123,7 +123,7 @@ fn set_pin_label(pininfo:&mut PinConfig, value:String) {
 
 // fill in the struct item pin from provided value
 fn set_pin_number(pininfo:&mut PinConfig, value:String) {
-    let val = value.parse::<i8>().unwrap();
+    let val = value.parse::<u8>().unwrap();
     pininfo.pin = val;
 }
 
