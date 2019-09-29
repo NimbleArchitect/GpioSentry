@@ -4,7 +4,8 @@ extern crate url;
 use url::{Url, ParseError};
 use std::fs;
 
-pub fn checkIsUrl(value: &String) -> bool {
+//check if we have recieved a file or url
+pub fn check_is_url(value: &String) -> bool {
     let val = value;
     if val.contains("://") {
         true
@@ -14,10 +15,10 @@ pub fn checkIsUrl(value: &String) -> bool {
 
 }
 
-pub fn makeSafeUrl(value: &String) -> String {
+//check if the provided url is valid
+pub fn make_safe_url(value: &String) -> String {
     let val = value.to_string();
 
-    //let mut out = Url::parse(&val);
     let out = match Url::parse(&val) {
         //Ok(out) => out.to_string(),
         Ok(out) => out.to_string(),
@@ -27,7 +28,8 @@ pub fn makeSafeUrl(value: &String) -> String {
     out
 }
 
-pub fn makeSafeFile(value: &String) -> String {
+//check if the provided file exists, this needs to be a full path to the executible
+pub fn make_safe_file(value: &String) -> String {
     let out = value.to_string();
     let is_valid = fs::metadata(&out).is_ok();
 

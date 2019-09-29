@@ -37,12 +37,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let contacts = conf::read_conf();
 
 
-    for (pin,info) in contacts {
-        println!("^ {}", pin);
+    for (_id, info) in contacts {
+        println!("^ {}", info.pin);
         println!(">>    delay={}", info.delay);
         println!(">>     data={}", info.data);
-        println!(">> datahigh={}", info.dataHigh);
-        println!(">>  datalow={}", info.dataLow);
+        // println!(">> datahigh={}", info.data_high);
+        // println!(">>  datalow={}", info.data_low);
         println!(">> location={}", info.location);
         println!(">>   method={}", info.method);
         println!(">>    state={}", info.state);

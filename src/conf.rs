@@ -6,18 +6,18 @@ use url::{Url, ParseError};
 
 extern crate ini;
 use ini::Ini;
-use crate::utils::checkIsUrl;
-use crate::utils::makeSafeFile;
-use crate::utils::makeSafeUrl;
+use crate::utils::check_is_url;
+use crate::utils::make_safe_file;
+use crate::utils::make_safe_url;
 
 
 pub struct PinConfig {
     pub data: String,
-    pub dataHigh: String,
-    pub dataLow: String,
     pub delay: i32,
+    pub label: String,
     pub location: String,
     pub method: u8,
+    pub pin: i8,
     pub state: u8,
     pub trigger: u8,
 }
@@ -25,14 +25,14 @@ pub struct PinConfig {
 impl Default for PinConfig {
     fn default () -> PinConfig {
         PinConfig{
-            data: "".to_string(), dataHigh: "".to_string(), dataLow: "".to_string(), delay: 0, 
-            location: "".to_string(), method: 0, state: 0, trigger: 0,
+            data: "".to_string(), delay: 0, label: "".to_string(), location: "".to_string(), 
+            method: 0, pin: -1, state: 0, trigger: 0
         }
     }
 }
 
-
-fn setData(pininfo:&mut PinConfig, value:String) {
+// fill in the struct item data from provided value
+fn set_data(pininfo:&mut PinConfig, value:String) {
     let val = value;
     let c = val.len();
     if c > 0 {
@@ -40,49 +40,51 @@ fn setData(pininfo:&mut PinConfig, value:String) {
     }
 }
 
-fn setDataHigh(pininfo:&mut PinConfig, value:String) {
-    let val = value;
-    let c = val.len();
-    if c > 0 {
-        pininfo.dataHigh = val;
-    }
-}
+// // fill in the struct item datahigh from provided value
+// fn set_data_high(pininfo:&mut PinConfig, value:String) {
+//     let val = value;
+//     let c = val.len();
+//     if c > 0 {
+//         pininfo.data_high = val;
+//     }
+// }
 
-fn setDataLow(pininfo:&mut PinConfig, value:String) {
-    let val = value;
-    let c = val.len();
-    if c > 0 {
-        pininfo.dataLow = val;
-    }
-}
+// // fill in the struct item datalow from provided value
+// fn set_data_low(pininfo:&mut PinConfig, value:String) {
+//     let val = value;
+//     let c = val.len();
+//     if c > 0 {
+//         pininfo.data_low = val;
+//     }
+// }
 
-fn setDelay(pininfo:&mut PinConfig, value:String) {
+// fill in the struct item delay from provided value
+fn set_delay(pininfo:&mut PinConfig, value:String) {
     let val = value.parse::<i32>().unwrap();
     pininfo.delay = val;
 }
 
-fn setLocation(pininfo:&mut PinConfig, value:String) {
-    //Location could be either a file path or a weburl
-    let mut val = "";
+//fill in the struct item location from provided value
+// this can be either a file path or url
+fn set_location(pininfo:&mut PinConfig, value:String) {
     let str_loc = value;
-    //println!(">> {}", str_loc);
+
     let c = str_loc.len();
     if c > 0 {
-        let isUrl = checkIsUrl(&str_loc);
+        let is_url = check_is_url(&str_loc);
 
-        let val = if isUrl == true {
-            let out = makeSafeUrl(&str_loc);
-            out
+        let val = if is_url == true {
+            make_safe_url(&str_loc)
         } else {
-            let out = makeSafeFile(&str_loc);
-            out
+            make_safe_file(&str_loc)
         };
-        println!("{}", val);
+
         pininfo.location = val;
     }
 }
 
-fn setMethod(pininfo:&mut PinConfig, value:String) {
+// fill in the struct item method from provided value
+fn set_method(pininfo:&mut PinConfig, value:String) {
     let val = value;
     let c = val.len();
     if c > 0 {
@@ -92,12 +94,13 @@ fn setMethod(pininfo:&mut PinConfig, value:String) {
             "post" => {pininfo.method = 1},
             "exec" => {pininfo.method = 2},
             
-            _ => println!("unknown method {}", val)
+            _ => panic!("invalid method found, method {} was found but I expected get, post or exec", val)
         }
     }
 }
 
-fn setState(pininfo:&mut PinConfig, value:String) {
+// fill in the struct item state from provided value
+fn set_state(pininfo:&mut PinConfig, value:String) {
     let val = value;
     let c = val.len();
     if c > 0 {
@@ -111,7 +114,8 @@ fn setState(pininfo:&mut PinConfig, value:String) {
     }
 }
 
-fn setTrigger(pininfo:&mut PinConfig, value:String) {
+// fill in the struct item trigger from provided value
+fn set_trigger(pininfo:&mut PinConfig, value:String) {
     let val = value;
     let c = val.len();
     if c > 0 {
@@ -126,38 +130,68 @@ fn setTrigger(pininfo:&mut PinConfig, value:String) {
 }
 
 
+// fill in the struct item trigger from provided value
+fn set_pin_label(pininfo:&mut PinConfig, value:String) {
+    let val = value;
+    let c = val.len();
+    if c > 0 {
+        pininfo.label = val;
+    }
+}
+
+// fill in the struct item pin from provided value
+fn set_pin_number(pininfo:&mut PinConfig, value:String) {
+    let val = value.parse::<i8>().unwrap();
+    pininfo.pin = val;
+}
+
+//read configuration file into hash table filling in struct as we go
 pub fn read_conf() -> HashMap<String, PinConfig> {
     let conf_file = Ini::load_from_file("gpio-watcher.conf").unwrap();
 
     let section_count = conf_file.sections().count();
+    if section_count <= 0 {
+        //no secions have been returned, it must be an invalid file so we quit early
+        panic!("Invalid config file!")
+    }
 
+    let mut array_index = 0;
     let mut pin_settings = HashMap::new();
-    
+    //loop through each section of the ini file
     for (str_pin, prop) in &conf_file {
-        let pin = str_pin.as_ref().unwrap();
-        let pin_number = pin.replace("pin", "");
-        
+
+        let label = str_pin.as_ref().unwrap();
+        //remove the word pin leaving just the number as a string, 
+        // this is used later as the hash table key
+        println!("{}", label);
+        //let pin_number = pin.replace("pin", "");
+        //create empty structure
         let mut pininfo = PinConfig::default();
 
+        //TODO: we still need to verify that we have recieved a valid default set of new values
+        // from the ini file
         for (key, value) in prop {
-            //println!("{:?}:{:?}", key, value);
+            
             match key.as_ref() {
-                // Match a single value
-                "data" => setData(&mut pininfo, value.to_string()),
-                "datahigh" => setDataHigh(&mut pininfo, value.to_string()),
-                "datalow" => setDataLow(&mut pininfo, value.to_string()),
-                "delay" => setDelay(&mut pininfo, value.to_string()),
-                "location" => setLocation(&mut pininfo, value.to_string()),
-                "method" => setMethod(&mut pininfo, value.to_string()),
-                "state" => setState(&mut pininfo, value.to_string()),
-                "trigger" => setTrigger(&mut pininfo, value.to_string()),
+                // Match each key, and call a function to pupulate the item in the pininfo struct
+                "pin" => set_pin_number(&mut pininfo, value.to_string()),
+                "data" => set_data(&mut pininfo, value.to_string()),
+                // "datahigh" => set_data_high(&mut pininfo, value.to_string()),
+                // "datalow" => set_data_low(&mut pininfo, value.to_string()),
+                "delay" => set_delay(&mut pininfo, value.to_string()),
+                "location" => set_location(&mut pininfo, value.to_string()),
+                "method" => set_method(&mut pininfo, value.to_string()),
+                "state" => set_state(&mut pininfo, value.to_string()),
+                "trigger" => set_trigger(&mut pininfo, value.to_string()),
                 
-                _ => println!("unknown key {}", key)
+                _ => panic!("unexpected key found, {} is unknown!", key)
             }
-
         }
-
-        pin_settings.insert(pin_number, pininfo);
+        set_pin_label(&mut pininfo, label.to_string());
+        //by this point the struct should have been filled in :)
+        // so we add the struct to the hash table
+        array_index += 1;
+        pin_settings.insert(array_index.to_string(), pininfo);
 
     }
 
