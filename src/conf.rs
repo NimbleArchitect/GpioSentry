@@ -40,24 +40,6 @@ fn set_data(pininfo:&mut PinConfig, value:String) {
     }
 }
 
-// // fill in the struct item datahigh from provided value
-// fn set_data_high(pininfo:&mut PinConfig, value:String) {
-//     let val = value;
-//     let c = val.len();
-//     if c > 0 {
-//         pininfo.data_high = val;
-//     }
-// }
-
-// // fill in the struct item datalow from provided value
-// fn set_data_low(pininfo:&mut PinConfig, value:String) {
-//     let val = value;
-//     let c = val.len();
-//     if c > 0 {
-//         pininfo.data_low = val;
-//     }
-// }
-
 // fill in the struct item delay from provided value
 fn set_delay(pininfo:&mut PinConfig, value:String) {
     let val = value.parse::<i32>().unwrap();
@@ -130,7 +112,7 @@ fn set_trigger(pininfo:&mut PinConfig, value:String) {
 }
 
 
-// fill in the struct item trigger from provided value
+// fill in the struct item label from provided value
 fn set_pin_label(pininfo:&mut PinConfig, value:String) {
     let val = value;
     let c = val.len();
@@ -176,8 +158,6 @@ pub fn read_conf() -> HashMap<String, PinConfig> {
                 // Match each key, and call a function to pupulate the item in the pininfo struct
                 "pin" => set_pin_number(&mut pininfo, value.to_string()),
                 "data" => set_data(&mut pininfo, value.to_string()),
-                // "datahigh" => set_data_high(&mut pininfo, value.to_string()),
-                // "datalow" => set_data_low(&mut pininfo, value.to_string()),
                 "delay" => set_delay(&mut pininfo, value.to_string()),
                 "location" => set_location(&mut pininfo, value.to_string()),
                 "method" => set_method(&mut pininfo, value.to_string()),
