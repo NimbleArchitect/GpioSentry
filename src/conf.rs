@@ -128,8 +128,8 @@ fn set_pin_number(pininfo:&mut PinConfig, value:String) {
 }
 
 //read configuration file into hash table filling in struct as we go
-pub fn read_conf() -> HashMap<String, PinConfig> {
-    let conf_file = Ini::load_from_file("gpio-watcher.conf").unwrap();
+pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
+    let conf_file = Ini::load_from_file(filename).unwrap();
 
     let section_count = conf_file.sections().count();
     if section_count <= 0 {

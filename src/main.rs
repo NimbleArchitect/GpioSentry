@@ -34,15 +34,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     println!("Start");
     
-    let contacts = conf::read_conf();
+    let contacts = conf::read_conf("gpio-watcher.conf".to_string());
 
 
     for (_id, info) in contacts {
         println!("^ {}", info.pin);
         println!(">>    delay={}", info.delay);
         println!(">>     data={}", info.data);
-        // println!(">> datahigh={}", info.data_high);
-        // println!(">>  datalow={}", info.data_low);
         println!(">> location={}", info.location);
         println!(">>   method={}", info.method);
         println!(">>    state={}", info.state);
