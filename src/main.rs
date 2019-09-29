@@ -3,13 +3,14 @@
 //use reqwest::r#async::{Client, Decoder};
 extern crate url;
 
-use url::{Url, ParseError};
-use std::time::Duration;
-use std::thread::sleep;
-use std::thread;
-use std::fs;
+//use url::{Url, ParseError};
+//use url::Url;
+// use std::time::Duration;
+// use std::thread::sleep;
+// use std::thread;
+// use std::fs;
 use rppal::gpio::Gpio;
-use rppal::gpio::Level;
+//use rppal::gpio::Level;
 //use std::env;
 //use std::mem;
 
@@ -53,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let gpio = Gpio::new()?;
 
 //    let mut time_now = Instant::now();;
-    let mut time_diff = 0;
+    //let mut time_diff = 0;
 
 
 //    let mut prev_contact_state = contact_pin.read(); 

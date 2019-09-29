@@ -1,7 +1,8 @@
 
 
 extern crate url;
-use url::{Url, ParseError};
+//use url::{Url, ParseError};
+use url::Url;
 use std::fs;
 
 //check if we have recieved a file or url

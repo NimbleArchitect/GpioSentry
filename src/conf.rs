@@ -2,7 +2,8 @@
 use std::collections::HashMap;
 
 extern crate url;
-use url::{Url, ParseError};
+//use url::{Url, ParseError};
+//use url::Url;
 
 extern crate ini;
 use ini::Ini;
