@@ -60,8 +60,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     //let mut prev_contact_state = Level::High; 
     let mut pin_array = gpiopins::init_pins(&gpio, &contacts);
 
-    loop {
-        //let contact_state = contact_pin.read();
+    loop { //main loop that never ends :)
+        //loop through each registered pin based on the config file
         for (id, mut info) in pin_array.iter_mut() {
             let result_pin = gpio.get(*id);
 
@@ -69,7 +69,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Ok(this_pin) => this_pin,
                 Err(_) => panic!("invalid gpio number!"),
             };
-            
+
+            //read the pin state, the init function should have set it to an input pin
             let logic_state = this_pin.read();
             //convert the logic state to a simple int
             if logic_state == rppal::gpio::Level::High {
@@ -78,16 +79,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 info.state = 0;
             }
 
+            //if the state has changed, tell the user
             if info.prev_state != info.state {
                 println!("was: {}, now: {}", info.prev_state, info.state);
+                //TODO: save the pin number and state to array ready for next loop
             }
 
+            //save the state as the new previous state
             info.prev_state = info.state;
-            
         }
+
+        //TODO: create loop that will call the action listed for each pin
+
         break;
     }
-
 
 
     Ok(())
