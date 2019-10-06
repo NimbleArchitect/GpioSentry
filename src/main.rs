@@ -56,19 +56,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!(">>  trigger={}", info.trigger);
         if info.state == 254 { //use current state
             let state = gpio.get(info.pin).unwrap().read();
+            //save the current detected state
             if state == rppal::gpio::Level::High {
-                pin_prev_state.insert(pin_numb, 1);
+                info.state = 1;
             } else {
-                pin_prev_state.insert(pin_numb, 0);
+                info.state = 0;
             }
+        }
+
+        //invert the current pin state to use as our previous state
+        if info.state == 1 {
+            pin_prev_state.insert(pin_numb, 0);
         } else {
-            pin_prev_state.insert(pin_numb, info.state);
+            pin_prev_state.insert(pin_numb, 1);
+        }
+
         }
         // if info.delay > 0 {
         //     let pin_number = &info.pin;
         //     //let mut this_pin = pin_state.get_mut(pin_number).unwrap();
         // }
-    }
+    
 
     
 
