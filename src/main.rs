@@ -15,6 +15,7 @@ use rppal::gpio::Gpio;
 //use std::mem;
 
 use std::error::Error;
+use std::collections::HashMap;
 
 mod conf;
 mod utils;
@@ -40,10 +41,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let gpio = Gpio::new()?;
     let mut contacts = conf::read_conf("gpio-watcher.conf".to_string());
     let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
+    let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
 
 
     for (_id, info) in contacts.iter_mut() {
+        let pin_numb = info.pin as u8;
         println!("^ {}", info.pin);
         println!(">>    delay={}", info.delay);
         println!(">>     data={}", info.data);
@@ -51,24 +54,30 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!(">>   method={}", info.method);
         println!(">>    state={}", info.state);
         println!(">>  trigger={}", info.trigger);
-        if info.delay > 0 {
-            let pin_number = &info.pin;
-            //let mut this_pin = pin_state.get_mut(pin_number).unwrap();
-        }
+        pin_prev_state.insert(pin_numb, 0);
+
+        // if info.delay > 0 {
+        //     let pin_number = &info.pin;
+        //     //let mut this_pin = pin_state.get_mut(pin_number).unwrap();
+        // }
     }
 
     
-
 
     let mut loop_count = 0;
     let mut time_now = Instant::now();
     let mut old_time_now = 0;
     let mut time_delay = 0;
+    let mut last_state = 0;
 
     loop { //main loop that never ends :)
 
         //work out time_delay
-        time_delay = time_now.elapsed().as_millis();
+        let time_state = time_now.elapsed().as_millis();
+        //println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
+        let time_delay = time_state - last_state;//TODO: might need to be swapped around
+        last_state = time_state;
+        println!("time_delay: {}", time_delay);
 
         //loop through each registered pin based on the config file
         for (id, state) in pin_state.iter_mut() {
@@ -95,42 +104,54 @@ fn main() -> Result<(), Box<dyn Error>> {
         //     println!("check - pin {} state: {}", id, state);
         // }
 
-
+        println!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
-            let current_state = *pin_state.get(&info.pin).unwrap();
-            println!("check - pin {}, state: {}, prev_state: {}", info.pin, current_state, info.prevstate);
+            let pin_numb = &info.pin;
+            let current_state = *pin_state.get(pin_numb).unwrap();
+            let pin_prevstate = pin_prev_state[pin_numb]; //get old pin state
+            println!("check - pin {}, current_state: {}, prev_state: {}", info.pin, current_state, pin_prevstate);
             //if state has changed
-            if info.prevstate == current_state {
+            if pin_prevstate == current_state {
                 //nothing has changed so reset the timeout and move to the next pin
+                println!("check - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
                 info.timeout = info.delay;
                 continue;
             }
+            println!("check - pin {}, trigger: {}, current_state: {}", info.pin, info.trigger, current_state);    
             if info.trigger == current_state {
                 //we have a trigger, Go! Go! Go!
-                //compare timeout value
+                //compute timeout value
                 if info.timeout > 0 {
-                    info.timeout -= time_delay as i32;
-                } else {
+                    println!("reduce - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
+                    if (info.timeout - time_delay as i32)  > 0 {
+                        info.timeout -= time_delay as i32;
+                    } else {
+                        info.timeout = 0;
+                    }
+                } 
+                
+                if info.timeout <= 0 {
                     //we have timed out in the changed state, so now we need to fire the trigger
-                    print!("triggered pin {} at state {}", info.pin, current_state);
+                    println!("triggered pin {} at state {}", info.pin, current_state);
                     info.timeout = info.delay; //reset our timeout
-                    info.prevstate = info.state; //now we change state and update prevstate
-                    info.state = current_state;
+                    //pin_prev_state[&info.pin] = info.state; //now we change state and update prevstate
+                    *pin_prev_state.get_mut(pin_numb).unwrap() = info.state;
+                    
                 }
 
                 //we dont update a prevstate value until we actually finalised the state
             }
         }
 
-        loop_count += 1;
-        let time_taken = time_now.elapsed().as_millis();
-        if time_taken >= 1000 {
-            println!("run {} loops in {} ms", loop_count, time_taken);
-            loop_count = 1;
-            time_now = Instant::now();
-            //break;
-        }
+        // loop_count += 1;
+        // let time_taken = time_now.elapsed().as_millis();
+        // if time_taken >= 1000 {
+        //     println!("run {} loops in {} ms", loop_count, time_taken);
+        //     loop_count = 1;
+        //     time_now = Instant::now();
+        //     //break;
+        // }
     }
 
 

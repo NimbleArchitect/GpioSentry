@@ -20,7 +20,6 @@ pub struct PinConfig {
     pub method: u8,
     pub pin: u8,
     pub state: u8,
-    pub prevstate: u8,
     pub trigger: u8,
     pub timeout: i32
 }
@@ -29,7 +28,7 @@ impl Default for PinConfig {
     fn default () -> PinConfig {
         PinConfig{
             data: "".to_string(), delay: 0, label: "".to_string(), location: "".to_string(), 
-            method: 0, pin: 255, state: 0, prevstate: 0, trigger: 0, timeout: 0
+            method: 0, pin: 255, state: 0, trigger: 0, timeout: 0
         }
     }
 }
