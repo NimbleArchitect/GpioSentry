@@ -66,9 +66,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         //invert the current pin state to use as our previous state
         if info.state == 1 {
-            pin_prev_state.insert(pin_numb, 0);
-        } else {
             pin_prev_state.insert(pin_numb, 1);
+        } else {
+            pin_prev_state.insert(pin_numb, 0);
         }
 
         }
@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         //     println!("check - pin {} state: {}", id, state);
         // }
 
-//        println!("pinloop start");
+        println!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
             let pin_numb = &info.pin;
@@ -151,9 +151,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                     //we have timed out in the changed state, so now we need to fire the trigger
                     println!("triggered pin {} at state {}", info.pin, current_state);
                     info.timeout = info.delay; //reset our timeout
-                    //pin_prev_state[&info.pin] = info.state; //now we change state and update prevstate
-                    *pin_prev_state.get_mut(pin_numb).unwrap() = info.state;
-                    
+                    //now we change state and update prevstate
+                    //*pin_prev_state.get_mut(pin_numb).unwrap() = info.state;
+                    let state = pin_prev_state.get_mut(pin_numb).unwrap();
+                    *state = current_state;
                 }
 
                 //we dont update a prevstate value until we actually finalised the state
