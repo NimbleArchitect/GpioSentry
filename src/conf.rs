@@ -28,7 +28,7 @@ impl Default for PinConfig {
     fn default () -> PinConfig {
         PinConfig{
             data: "".to_string(), delay: 0, label: "".to_string(), location: "".to_string(), 
-            method: 0, pin: 255, state: 0, trigger: 0, timeout: 0
+            method: 0, pin: 255, state: 254, trigger: 0, timeout: 0
         }
     }
 }
@@ -92,6 +92,8 @@ fn set_state(pininfo:&mut PinConfig, value:String) {
             pininfo.state = 1;
         } else if val == "low" {
             pininfo.state = 0;
+        } else if val == "auto" {
+            pininfo.state = 254;
         } else {
             panic!("invalid State value, found {} but I expeceted high or low!!", val)
         }
