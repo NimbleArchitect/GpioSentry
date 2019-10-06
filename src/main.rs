@@ -7,9 +7,10 @@ extern crate url;
 //use url::Url;
 use std::time::Instant;
 //use std::thread::sleep;
-// use std::thread;
+use std::thread;
 // use std::fs;
 use rppal::gpio::Gpio;
+use subprocess::Exec;
 //use rppal::gpio::Level;
 //use std::env;
 //use std::mem;
@@ -22,20 +23,60 @@ mod utils;
 mod gpiopins;
 
 
-fn url_send(url: String) {
+fn url_send(method: u8, url: String, data: String) {
+//0 = get
+//1 = post
 
     let client = reqwest::Client::new();
-    let _res = client.post(&url)
-        .body("ON")
-        .send()
-        .expect("Failed to send request");
+    if method == 1 {
+        println!("sending post data \"{}\" to \"{}\"", data, url);
+        let _res = client.post(&url)
+            .body(data)
+            .send()
+            .expect("Failed to send request");
+    } else {
+        println!("calling url \"{}\"", url);
+        let _res = client.get(&url)
+            //.body(data)
+            .send()
+            .expect("Failed to send request");
+    }
 
 }
 
+fn run_command(location: String) {
+    //TODO: check that the program exists?
+    println!("starting command: {}", location);
+    Exec::shell(location);
+}
+
+//read spawn a seperate thread/process based on the method reqiested
+// fuction never returns a value
+fn do_action(method: u8, location: String, data: String) {
+
+    match method {
+        // Match a single value
+        //get
+        0 => {
+            thread::spawn(|| url_send(0, location, data));
+        },
+        //post
+        1 => {
+            thread::spawn(|| url_send(1, location, data));
+        },
+        //exec
+        2 => {
+            thread::spawn(|| run_command(location));
+        },
+
+        _ => panic!("Method not implmented")
+    }
+}
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-    
+    //TODO: read command line arguments to set configurtaion file location
+        
     println!("Start");
     
     let gpio = Gpio::new()?;
@@ -80,9 +121,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     
 
-    //let mut loop_count = 0;
+    // let mut loop_count = 0;
+    // let mut time_taken = 0;
+    
     let time_now = Instant::now();
-    //let mut old_time_now = 0;
     let mut time_delay = 0;
     let mut last_state = 0;
 
@@ -115,12 +157,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        // //now we have read the state of all pins we can check against our actions
-        // for (id, state) in &pin_state {
-        //     println!("check - pin {} state: {}", id, state);
-        // }
-
-        println!("pinloop start");
+//        println!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
             let pin_numb = &info.pin;
@@ -152,9 +189,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                     println!("triggered pin {} at state {}", info.pin, current_state);
                     info.timeout = info.delay; //reset our timeout
                     //now we change state and update prevstate
-                    //*pin_prev_state.get_mut(pin_numb).unwrap() = info.state;
                     let state = pin_prev_state.get_mut(pin_numb).unwrap();
                     *state = current_state;
+                    //with state now saved we can call the action that has been triggered
+                    do_action(info.method, info.location.to_string(), info.data.to_string());
                 }
 
                 //we dont update a prevstate value until we actually finalised the state
@@ -162,11 +200,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         // loop_count += 1;
-        // let time_taken = time_now.elapsed().as_millis();
+        // time_taken += time_delay;
+        // // let time_taken = time_now.elapsed().as_millis();
         // if time_taken >= 1000 {
         //     println!("run {} loops in {} ms", loop_count, time_taken);
         //     loop_count = 1;
-        //     time_now = Instant::now();
+        //     time_taken = 0;
         //     //break;
         // }
     }
