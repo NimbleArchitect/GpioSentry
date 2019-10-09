@@ -133,10 +133,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         //work out time_delay
         let time_state = time_now.elapsed().as_millis(); //TODO: I dont think we ever get a ms elapsed between
         // calls to this function due to release performance improvments
-        println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
+//        println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
         time_delay = (time_state - last_state) as u32;
         last_state = time_state;
-        println!("time_delay: {}", time_delay);
+//        println!("time_delay: {}", time_delay);
 
         //loop through each registered pin based on the config file
         for (id, state) in pin_state.iter_mut() {
@@ -158,7 +158,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        println!("pinloop start");
+//        println!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
             let pin_numb = &info.pin;
@@ -205,7 +205,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         time_taken += time_delay;
         // let time_taken = time_now.elapsed().as_millis();
         if time_taken >= 1000 {
-            println!("run {} loops in {} ms", loop_count, time_taken);
+            //println!("run {} loops in {} ms", loop_count, time_taken);
             loop_count = 1;
             time_taken = 0;
             //break;
