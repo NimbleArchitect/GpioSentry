@@ -14,14 +14,14 @@ use crate::utils::make_safe_url;
 
 pub struct PinConfig {
     pub data: String,
-    pub delay: i32,
+    pub delay: u32,
     pub label: String,
     pub location: String,
     pub method: u8,
     pub pin: u8,
     pub state: u8,
     pub trigger: u8,
-    pub timeout: i32
+    pub timeout: u32
 }
 
 impl Default for PinConfig {
@@ -44,7 +44,7 @@ fn set_data(pininfo:&mut PinConfig, value:String) {
 
 // fill in the struct item delay from provided value
 fn set_delay(pininfo:&mut PinConfig, value:String) {
-    let val = value.parse::<i32>().unwrap();
+    let val = value.parse::<u32>().unwrap();
     pininfo.delay = val;
 }
 

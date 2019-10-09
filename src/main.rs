@@ -76,11 +76,11 @@ fn do_action(method: u8, location: String, data: String) {
 
 fn main() -> Result<(), Box<dyn Error>> {
     //TODO: read command line arguments to set configurtaion file location
-        
+
     println!("Start");
     
     let gpio = Gpio::new()?;
-    let mut contacts = conf::read_conf("gpio-watcher.conf".to_string());
+    let mut contacts = conf::read_conf("/etc/gpio-watcher.conf".to_string());
     let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
     let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        //invert the current pin state to use as our previous state
+        //set the current pin state to use as our previous state
         if info.state == 1 {
             pin_prev_state.insert(pin_numb, 1);
         } else {
@@ -121,8 +121,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     
 
-    // let mut loop_count = 0;
-    // let mut time_taken = 0;
+    let mut loop_count = 0;
+    let mut time_taken = 0;
     
     let time_now = Instant::now();
     let mut time_delay = 0;
@@ -131,11 +131,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop { //main loop that never ends :)
 
         //work out time_delay
-        let time_state = time_now.elapsed().as_millis();
-//        println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
-        time_delay = time_state - last_state;//TODO: might need to be swapped around
+        let time_state = time_now.elapsed().as_millis(); //TODO: I dont think we ever get a ms elapsed between
+        // calls to this function due to release performance improvments
+        println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
+        time_delay = (time_state - last_state) as u32;
         last_state = time_state;
-//        println!("time_delay: {}", time_delay);
+        println!("time_delay: {}", time_delay);
 
         //loop through each registered pin based on the config file
         for (id, state) in pin_state.iter_mut() {
@@ -157,7 +158,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-//        println!("pinloop start");
+        println!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
             let pin_numb = &info.pin;
@@ -177,37 +178,38 @@ fn main() -> Result<(), Box<dyn Error>> {
                 //compute timeout value
                 if info.timeout > 0 {
 //                    println!("reduce - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
-                    if (info.timeout - time_delay as i32)  > 0 {
-                        info.timeout -= time_delay as i32;
-                    } else {
-                        info.timeout = 0;
-                    }
+                    info.timeout -= time_delay;
                 } 
 
                 if info.timeout <= 0 {
                     //we have timed out in the changed state, so now we need to fire the trigger
-                    println!("triggered pin {} at state {}", info.pin, current_state);
+//                    println!("triggered pin {} at state {}", info.pin, current_state);
                     info.timeout = info.delay; //reset our timeout
                     //now we change state and update prevstate
                     let state = pin_prev_state.get_mut(pin_numb).unwrap();
+                    //TODO: this needs to change, prev value needs updating everytime,
+                    // as the loop only checks triggers from the list, meaning one way triggers
+                    // only happen in one direction.  will have to set a has updated flag in the hope of fixing.
                     *state = current_state;
+                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
+//                    println!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
+
                     //with state now saved we can call the action that has been triggered
                     do_action(info.method, info.location.to_string(), info.data.to_string());
                 }
-
                 //we dont update a prevstate value until we actually finalised the state
             }
         }
 
-        // loop_count += 1;
-        // time_taken += time_delay;
-        // // let time_taken = time_now.elapsed().as_millis();
-        // if time_taken >= 1000 {
-        //     println!("run {} loops in {} ms", loop_count, time_taken);
-        //     loop_count = 1;
-        //     time_taken = 0;
-        //     //break;
-        // }
+        loop_count += 1;
+        time_taken += time_delay;
+        // let time_taken = time_now.elapsed().as_millis();
+        if time_taken >= 1000 {
+            println!("run {} loops in {} ms", loop_count, time_taken);
+            loop_count = 1;
+            time_taken = 0;
+            //break;
+        }
     }
 
 
