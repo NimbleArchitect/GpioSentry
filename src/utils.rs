@@ -4,6 +4,63 @@ extern crate url;
 //use url::{Url, ParseError};
 use url::Url;
 use std::fs;
+use subprocess::Exec;
+use std::thread;
+
+
+fn url_send(method: u8, url: String, data: String) {
+//0 = get
+//1 = post
+
+    let client = reqwest::Client::new();
+    if method == 1 {
+        println!("sending post data \"{}\" to \"{}\"", data, url);
+        let _res = client.post(&url)
+            .body(data)
+            .send()
+            .expect("Failed to send request");
+    } else {
+        println!("calling url \"{}\"", url);
+        let _res = client.get(&url)
+            //.body(data)
+            .send()
+            .expect("Failed to send request");
+    }
+
+}
+
+fn run_command(location: String) {
+    //TODO: check that the program exists?
+    println!("starting command: {}", location);
+    Exec::shell(location);
+}
+
+//read spawn a seperate thread/process based on the method reqiested
+// fuction never returns a value
+pub fn do_action(method: u8, location: String, data: String) {
+
+    match method {
+        // Match a single value
+        //get
+        0 => {
+            //do nothing
+        },
+        1 => {
+            thread::spawn(|| url_send(0, location, data));
+        },
+        //post
+        2 => {
+            thread::spawn(|| url_send(1, location, data));
+        },
+        //exec
+        3 => {
+            thread::spawn(|| run_command(location));
+        },
+
+        _ => panic!("Method not implmented")
+    }
+}
+
 
 //check if we have recieved a file or url
 pub fn check_is_url(value: &String) -> bool {

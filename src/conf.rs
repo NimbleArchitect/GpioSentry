@@ -14,14 +14,14 @@ use crate::utils::make_safe_url;
 
 pub struct PinConfig {
     pub data: String,
-    pub delay: u32,
+    pub delay: i32,
     pub label: String,
     pub location: String,
     pub method: u8,
     pub pin: u8,
     pub state: u8,
     pub trigger: u8,
-    pub timeout: u32
+    pub timeout: i32
 }
 
 impl Default for PinConfig {
@@ -44,7 +44,7 @@ fn set_data(pininfo:&mut PinConfig, value:String) {
 
 // fill in the struct item delay from provided value
 fn set_delay(pininfo:&mut PinConfig, value:String) {
-    let val = value.parse::<u32>().unwrap();
+    let val = value.parse::<i32>().unwrap();
     pininfo.delay = val;
 }
 
@@ -143,8 +143,8 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
 
     let mut array_index = 0;
     let mut pin_settings = HashMap::new();
-    let mut pin_high: HashMap<u8, u32> = HashMap::new();
-    let mut pin_low: HashMap<u8, u32> = HashMap::new();
+    let mut pin_high: HashMap<u8, i32> = HashMap::new();
+    let mut pin_low: HashMap<u8, i32> = HashMap::new();
     //loop through each section of the ini file
     for (str_pin, prop) in &conf_file {
 
@@ -193,39 +193,39 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
     for (_id, pininfo) in &pin_settings {
         let pin_number = pininfo.pin;
 
-        println!("*Pin {}", pin_number);
-        println!(" check high");
+        debug!("*Pin {}", pin_number);
+        debug!(" check high");
         let high = if pin_high.contains_key(&pin_number) == true {
-            println!("  found");
+            debug!("  found");
             *pin_high.get_mut(&pin_number).unwrap()
         } else {
-            println!("  missing");
+            debug!("  missing");
             0
         };
-        println!("  value {}", high);
-        println!(" check low");
+        debug!("  value {}", high);
+        debug!(" check low");
         let low = if pin_low.contains_key(&pin_number) == true {
-            println!("  found");
+            debug!("  found");
             *pin_low.get_mut(&pin_number).unwrap()
         } else {
-            println!("  missing");
+            debug!("  missing");
             0
         };
-        println!("  value {}", low);
+        debug!("  value {}", low);
 
         if pin_high.contains_key(&pin_number) == true {
             if pin_low.contains_key(&pin_number) == true {
-                println!("removing pair");
+                debug!("removing pair");
                 pin_low.remove(&pin_number);
                 pin_high.remove(&pin_number);
             }
         }
     }
 
-    println!("checking remaining high triggers");
+    debug!("checking remaining high triggers");
     for (id, timeout) in pin_high {
         if timeout >= 1 {
-            println!("missing trigger pin {}", id);
+            info!("missing trigger pin {}", id);
             array_index += 1;
             let mut pininfo = PinConfig::default();
             pininfo.pin = id;
@@ -235,10 +235,10 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         }
     }
 
-    println!("checking remaining high triggers");
+    debug!("checking remaining high triggers");
     for (id, timeout) in pin_low {
         if timeout >= 1 {
-            println!("missing trigger for pin {}", id);
+            info!("missing trigger for pin {}", id);
             array_index += 1;
             let mut pininfo = PinConfig::default();
             pininfo.pin = id;

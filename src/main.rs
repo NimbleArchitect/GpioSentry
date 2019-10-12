@@ -1,109 +1,59 @@
 
-//use futures::{Future, Stream};
-//use reqwest::r#async::{Client, Decoder};
 extern crate url;
 
-//use url::{Url, ParseError};
-//use url::Url;
 use std::time::Instant;
-//use std::thread::sleep;
-use std::thread;
-// use std::fs;
+
 use rppal::gpio::Gpio;
-use subprocess::Exec;
-//use rppal::gpio::Level;
-//use std::env;
-//use std::mem;
+
 
 use std::error::Error;
 use std::collections::HashMap;
+
+#[macro_use]
+extern crate log;
+extern crate env_logger;
+use env_logger::Env;
 
 mod conf;
 mod utils;
 mod gpiopins;
 
 
-fn url_send(method: u8, url: String, data: String) {
-//0 = get
-//1 = post
-
-    let client = reqwest::Client::new();
-    if method == 1 {
-        println!("sending post data \"{}\" to \"{}\"", data, url);
-        let _res = client.post(&url)
-            .body(data)
-            .send()
-            .expect("Failed to send request");
-    } else {
-        println!("calling url \"{}\"", url);
-        let _res = client.get(&url)
-            //.body(data)
-            .send()
-            .expect("Failed to send request");
-    }
-
-}
-
-fn run_command(location: String) {
-    //TODO: check that the program exists?
-    println!("starting command: {}", location);
-    Exec::shell(location);
-}
-
-//read spawn a seperate thread/process based on the method reqiested
-// fuction never returns a value
-fn do_action(method: u8, location: String, data: String) {
-
-    match method {
-        // Match a single value
-        //get
-        0 => {
-            //do nothing
-        },
-        1 => {
-            thread::spawn(|| url_send(0, location, data));
-        },
-        //post
-        2 => {
-            thread::spawn(|| url_send(1, location, data));
-        },
-        //exec
-        3 => {
-            thread::spawn(|| run_command(location));
-        },
-
-        _ => panic!("Method not implmented")
-    }
-}
-
 
 fn main() -> Result<(), Box<dyn Error>> {
     //TODO: read command line arguments to set configurtaion file location
+    //env_logger::init().unwrap();
+    env_logger::from_env(Env::default().default_filter_or("warn")).init();
 
-    println!("Start");
+    debug!("Start");
     
     let gpio = Gpio::new()?;
+    debug!("reading config file");
     let mut contacts = conf::read_conf("/etc/gpio-watcher.conf".to_string());
-    let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
-    let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
+    info!("initilising pins..");
+    let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
+    debug!("finished initilising pins");
+    let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
 
     for (_id, info) in contacts.iter_mut() {
         let pin_numb = info.pin as u8;
-        println!("^ {}", info.pin);
-        println!(">>    delay={}", info.delay);
-        println!(">>     data={}", info.data);
-        println!(">> location={}", info.location);
-        println!(">>   method={}", info.method);
-        println!(">>    state={}", info.state);
-        println!(">>  trigger={}", info.trigger);
+        info!("^ {}", info.pin);
+        info!(">>    delay={}", info.delay);
+        info!(">>     data={}", info.data);
+        info!(">> location={}", info.location);
+        info!(">>   method={}", info.method);
+        info!(">>    state={}", info.state);
+        info!(">>  trigger={}", info.trigger);
         if info.state == 254 { //use current state
             let state = gpio.get(info.pin).unwrap().read();
             //save the current detected state
             if state == rppal::gpio::Level::High {
+                debug!("live pin {} state is high", info.pin);
                 info.state = 1;
             } else {
+                debug!("live pin {} state is low", info.pin);
                 info.state = 0;
             }
         }
@@ -136,10 +86,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         //work out time_delay
         let time_state = time_now.elapsed().as_millis(); //TODO: I dont think we ever get a ms elapsed between
         // calls to this function due to release performance improvments
-        println!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
-        time_delay = (time_state - last_state) as u32;
+        debug!("time_state: {}, last_state: {}, larger: {}", time_state, last_state, (time_state > last_state));
+        time_delay = (time_state - last_state) as i32;
         last_state = time_state;
-        println!("time_delay: {}", time_delay);
+        debug!("time_delay: {}", time_delay);
 
         //loop through each registered pin based on the config file
         for (id, state) in pin_state.iter_mut() {
@@ -161,32 +111,40 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        println!("pinloop start");
+        debug!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
             let pin_numb = &info.pin;
             let current_state = *pin_state.get(pin_numb).unwrap();
             let pin_prevstate = pin_prev_state[pin_numb]; //get old pin state
-//            println!("check - pin {}, current_state: {}, prev_state: {}", info.pin, current_state, pin_prevstate);
+            debug!("check - pin {}, current_state: {}, prev_state: {}", info.pin, current_state, pin_prevstate);
             //if state has changed
             if pin_prevstate == current_state {
                 //nothing has changed so reset the timeout and move to the next pin
-//                println!("check - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
-                info.timeout = info.delay;
+                debug!("check - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
+                info.delay = info.delay;
                 continue;
             }
-//            println!("check - pin {}, trigger: {}, current_state: {}", info.pin, info.trigger, current_state);    
+            debug!("check - pin {}, trigger: {}, current_state: {}", info.pin, info.trigger, current_state);    
             if info.trigger == current_state {
                 //we have a trigger, Go! Go! Go!
-                //compute timeout value
-                if info.timeout > 0 {
-//                    println!("reduce - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
-                    info.timeout -= time_delay;
-                } 
+                let mut timeout = 0;
 
-                if info.timeout <= 0 {
+                //compute timeout value
+                debug!("time_delay: {}", time_delay);
+                if time_delay > 0 {
+                    let pin_timeout = {info.delay};
+                    debug!("pin_timeout: {}", pin_timeout);
+                    timeout = pin_timeout - time_delay;
+                }
+                if timeout > 0 {
+                    debug!("reduce - pin {}, timeout: {}, delay: {}", info.pin, timeout, info.delay);
+                    info.timeout = timeout;
+                }
+
+                if timeout <= 0 {
                     //we have timed out in the changed state, so now we need to fire the trigger
-//                    println!("triggered pin {} at state {}", info.pin, current_state);
+                    debug!("triggered pin {} at state {}", info.pin, current_state);
                     info.timeout = info.delay; //reset our timeout
                     //now we change state and update prevstate
                     let state = pin_prev_state.get_mut(pin_numb).unwrap();
@@ -194,11 +152,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // as the loop only checks triggers from the list, meaning one way triggers
                     // only happen in one direction.  will have to set a has updated flag in the hope of fixing.
                     *state = current_state;
-//                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
-//                    println!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
+                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
+                    debug!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
 
                     //with state now saved we can call the action that has been triggered
-                    do_action(info.method, info.location.to_string(), info.data.to_string());
+                    utils::do_action(info.method, info.location.to_string(), info.data.to_string());
                 }
                 //we dont update a prevstate value until we actually finalised the state
             }
