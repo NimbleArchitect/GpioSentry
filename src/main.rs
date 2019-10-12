@@ -195,9 +195,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                     info.timeout = info.delay; //reset our timeout
                     //now we change state and update prevstate
                     let state = pin_prev_state.get_mut(pin_numb).unwrap();
-                    //TODO: this needs to change, prev value needs updating everytime,
-                    // as the loop only checks triggers from the list, meaning one way triggers
-                    // only happen in one direction.  will have to set a has updated flag in the hope of fixing.
+                    //TODO: need to create a cooldown value that will pause trigger for the pin until the 
+                    // cooldown value has expired, this will help with double triggers on the doorbell
                     *state = current_state;
                     let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
                     debug!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
