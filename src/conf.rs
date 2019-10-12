@@ -74,9 +74,9 @@ fn set_method(pininfo:&mut PinConfig, value:String) {
     if c > 0 {
         match val.as_ref() {
             // Match a single value
-            "get" => {pininfo.method = 0},
-            "post" => {pininfo.method = 1},
-            "exec" => {pininfo.method = 2},
+            "get" => {pininfo.method = 1},
+            "post" => {pininfo.method = 2},
+            "exec" => {pininfo.method = 3},
             
             _ => panic!("invalid method found, method {} was found but I expected get, post or exec", val)
         }
@@ -143,6 +143,8 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
 
     let mut array_index = 0;
     let mut pin_settings = HashMap::new();
+    let mut pin_high: HashMap<u8, u32> = HashMap::new();
+    let mut pin_low: HashMap<u8, u32> = HashMap::new();
     //loop through each section of the ini file
     for (str_pin, prop) in &conf_file {
 
@@ -174,9 +176,76 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         set_pin_label(&mut pininfo, label.to_string());
         //by this point the struct should have been filled in :)
         // so we add the struct to the hash table
+        let pin_trigger = {pininfo.trigger};
+        let pin_number = {pininfo.pin};
+        let trigger_time = {pininfo.delay};
+
         array_index += 1;
         pin_settings.insert(array_index.to_string(), pininfo);
+        if pin_trigger == 1 {
+            pin_high.insert(pin_number, trigger_time);
+        } else {
+            pin_low.insert(pin_number, trigger_time);
+        }
+    }
 
+    //work out how to add missing triggers from the pair
+    for (_id, pininfo) in &pin_settings {
+        let pin_number = pininfo.pin;
+
+        println!("*Pin {}", pin_number);
+        println!(" check high");
+        let high = if pin_high.contains_key(&pin_number) == true {
+            println!("  found");
+            *pin_high.get_mut(&pin_number).unwrap()
+        } else {
+            println!("  missing");
+            0
+        };
+        println!("  value {}", high);
+        println!(" check low");
+        let low = if pin_low.contains_key(&pin_number) == true {
+            println!("  found");
+            *pin_low.get_mut(&pin_number).unwrap()
+        } else {
+            println!("  missing");
+            0
+        };
+        println!("  value {}", low);
+
+        if pin_high.contains_key(&pin_number) == true {
+            if pin_low.contains_key(&pin_number) == true {
+                println!("removing pair");
+                pin_low.remove(&pin_number);
+                pin_high.remove(&pin_number);
+            }
+        }
+    }
+
+    println!("checking remaining high triggers");
+    for (id, timeout) in pin_high {
+        if timeout >= 1 {
+            println!("missing trigger pin {}", id);
+            array_index += 1;
+            let mut pininfo = PinConfig::default();
+            pininfo.pin = id;
+            pininfo.trigger = 0;
+            pininfo.delay = timeout;
+            pin_settings.insert(array_index.to_string(), pininfo);
+        }
+    }
+
+    println!("checking remaining high triggers");
+    for (id, timeout) in pin_low {
+        if timeout >= 1 {
+            println!("missing trigger for pin {}", id);
+            array_index += 1;
+            let mut pininfo = PinConfig::default();
+            pininfo.pin = id;
+            pininfo.trigger = 1;
+            pininfo.delay = timeout;
+            pin_settings.insert(array_index.to_string(), pininfo);
+        }
     }
 
     pin_settings

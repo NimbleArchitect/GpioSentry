@@ -58,14 +58,17 @@ fn do_action(method: u8, location: String, data: String) {
         // Match a single value
         //get
         0 => {
+            //do nothing
+        },
+        1 => {
             thread::spawn(|| url_send(0, location, data));
         },
         //post
-        1 => {
+        2 => {
             thread::spawn(|| url_send(1, location, data));
         },
         //exec
-        2 => {
+        3 => {
             thread::spawn(|| run_command(location));
         },
 
@@ -191,7 +194,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // as the loop only checks triggers from the list, meaning one way triggers
                     // only happen in one direction.  will have to set a has updated flag in the hope of fixing.
                     *state = current_state;
-                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
+//                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
 //                    println!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
 
                     //with state now saved we can call the action that has been triggered
