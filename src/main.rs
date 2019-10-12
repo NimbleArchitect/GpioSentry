@@ -2,12 +2,13 @@
 extern crate url;
 
 use std::time::Instant;
-
 use rppal::gpio::Gpio;
-
-
 use std::error::Error;
 use std::collections::HashMap;
+use std::thread;
+
+extern crate clap;
+use clap::{App, Arg};
 
 #[macro_use]
 extern crate log;
@@ -19,17 +20,58 @@ mod utils;
 mod gpiopins;
 
 
+fn check_args() -> clap::ArgMatches<'static> {
+
+    let matches = App::new("gpio-watcher")
+        .version("0.1.0")
+        .about("Watches gpio pins on a raspberry pi and reacts to changes in the pins state")
+        .arg(
+            Arg::with_name("config")
+                .long("config")
+                .short("c")
+                .value_name("FILE")
+                .help("Sets a custom config file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("loop-delay")
+                .long("loop-delay")
+                .short("s")
+                .value_name("TIME")
+                .help("sleep this many milli seconds between checks")
+                .takes_value(true),
+        )
+
+        .get_matches();
+
+    matches
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     //TODO: read command line arguments to set configurtaion file location
     //env_logger::init().unwrap();
-    env_logger::from_env(Env::default().default_filter_or("warn")).init();
+    let mut config_filename = "/etc/gpio-watcher.conf";
+    let mut config_loop_sleep = 0;
 
+    env_logger::from_env(Env::default().default_filter_or("info")).init();
     debug!("Start");
+
+
+    let args = check_args();
+    // You can check the value provided by positional arguments, or option arguments
+    if let Some(c) = args.value_of("config") {
+        config_filename = c;
+    }
+    if let Some(c) = args.value_of("loop-delay") {
+        println!("setting loop-delay: {}", c);
+        config_loop_sleep = c.parse::<u32>().unwrap();
+    }
+
+
     
     let gpio = Gpio::new()?;
     debug!("reading config file");
-    let mut contacts = conf::read_conf("/etc/gpio-watcher.conf".to_string());
+    let mut contacts = conf::read_conf(config_filename.to_string());
 
     info!("initilising pins..");
     let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
@@ -111,6 +153,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
 
+        if config_loop_sleep > 0 {
+            debug!("sleeping for {} milliseconds", config_loop_sleep);
+            thread::sleep_ms(config_loop_sleep);
+        }
+
         debug!("pinloop start");
         //loop through each contact state
         for (_id, info) in contacts.iter_mut() {
@@ -166,7 +213,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         time_taken += time_delay;
         // let time_taken = time_now.elapsed().as_millis();
         if time_taken >= 1000 {
-            println!("run {} loops in {} ms", loop_count, time_taken);
+            debug!("run {} loops in {} ms", loop_count, time_taken);
             loop_count = 1;
             time_taken = 0;
             //break;

@@ -151,7 +151,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         let label = str_pin.as_ref().unwrap();
         //remove the word pin leaving just the number as a string, 
         // this is used later as the hash table key
-        println!("{}", label);
+        debug!("loading section: {}", label);
         //let pin_number = pin.replace("pin", "");
         //create empty structure
         let mut pininfo = PinConfig::default();
