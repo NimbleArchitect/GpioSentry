@@ -41,6 +41,11 @@ fn check_args() -> clap::ArgMatches<'static> {
                 .help("sleep this many milli seconds between checks")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("play-fair")
+                .long("play-fair")
+                .help("gives up processing time at the end of every loop")
+        )
 
         .get_matches();
 
@@ -71,6 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //env_logger::init().unwrap();
     let mut config_filename = "/etc/gpio-watcher.conf";
     let mut config_loop_sleep = 0;
+    let mut config_play_fair = 0;
 
     env_logger::from_env(Env::default().default_filter_or("info")).init();
     debug!("Start");
@@ -83,9 +89,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     if let Some(c) = args.value_of("loop-delay") {
         println!("setting loop-delay: {}", c);
-        config_loop_sleep = c.parse::<u32>().unwrap();
+        config_loop_sleep = c.parse::<u64>().unwrap();
     }
-
+    if args.is_present("play-fair") {
+        println!("play nice is enabled");
+        config_play_fair = 1;
+    }
+    
     //read configuration file    
     let gpio = Gpio::new()?;
     debug!("reading config file");
@@ -154,7 +164,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if config_loop_sleep > 0 {
             debug!("sleeping for {} milliseconds", config_loop_sleep);
-            thread::sleep_ms(config_loop_sleep);
+            let sleep_time = std::time::Duration::from_nanos(config_loop_sleep);
+            thread::sleep(sleep_time);
+        }
+
+        if config_play_fair == 1 {
+            thread::yield_now();
         }
 
         debug!("pinloop start");
