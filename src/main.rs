@@ -38,7 +38,7 @@ fn check_args() -> clap::ArgMatches<'static> {
                 .long("loop-delay")
                 .short("s")
                 .value_name("TIME")
-                .help("sleep this many milli seconds between checks")
+                .help("sleep this many nano-seconds between loops")
                 .takes_value(true),
         )
         .arg(
@@ -163,7 +163,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if config_loop_sleep > 0 {
-            debug!("sleeping for {} milliseconds", config_loop_sleep);
+            debug!("sleeping for {} nanoseconds", config_loop_sleep);
             let sleep_time = std::time::Duration::from_nanos(config_loop_sleep);
             thread::sleep(sleep_time);
         }
