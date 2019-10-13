@@ -47,6 +47,25 @@ fn check_args() -> clap::ArgMatches<'static> {
     matches
 }
 
+
+fn show_current_state(info: &conf::PinConfig) {
+    info!("^ {}", info.pin);
+    info!(">>    delay={}", info.delay);
+    info!(">>     data={}", info.data);
+    info!(">> location={}", info.location);
+    info!(">>   method={}", info.method);
+    info!(">>    state={}", info.state);
+    info!(">>  trigger={}", info.trigger);
+}
+
+fn get_pin_state(state_value: rppal::gpio::Level) -> u8{
+    if state_value == rppal::gpio::Level::High {
+        1
+    } else {
+        0
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     //TODO: read command line arguments to set configurtaion file location
     //env_logger::init().unwrap();
@@ -56,9 +75,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
     debug!("Start");
 
-
+    //read command line arguments
     let args = check_args();
-    // You can check the value provided by positional arguments, or option arguments
+
     if let Some(c) = args.value_of("config") {
         config_filename = c;
     }
@@ -67,37 +86,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         config_loop_sleep = c.parse::<u32>().unwrap();
     }
 
-
-    
+    //read configuration file    
     let gpio = Gpio::new()?;
     debug!("reading config file");
-    let mut contacts = conf::read_conf(config_filename.to_string());
+    //read_conf returns a hash table of the pin configuration 
+    let mut pin_config = conf::read_conf(config_filename.to_string());
 
     info!("initilising pins..");
-    let mut pin_state = gpiopins::init_pins(&gpio, &contacts);
+    let mut pin_state = gpiopins::init_pins(&gpio, &pin_config);
     debug!("finished initilising pins");
     let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
 
-    for (_id, info) in contacts.iter_mut() {
+    for (_id, info) in pin_config.iter_mut() {
         let pin_numb = info.pin as u8;
-        info!("^ {}", info.pin);
-        info!(">>    delay={}", info.delay);
-        info!(">>     data={}", info.data);
-        info!(">> location={}", info.location);
-        info!(">>   method={}", info.method);
-        info!(">>    state={}", info.state);
-        info!(">>  trigger={}", info.trigger);
+        show_current_state(&info);
+
         if info.state == 254 { //use current state
             let state = gpio.get(info.pin).unwrap().read();
-            //save the current detected state
-            if state == rppal::gpio::Level::High {
-                debug!("live pin {} state is high", info.pin);
-                info.state = 1;
-            } else {
-                debug!("live pin {} state is low", info.pin);
-                info.state = 0;
-            }
+            //save the current detected pin state
+            info.state = get_pin_state(state);
+            debug!("live pin {} state is {}", info.pin, info.state);
         }
 
         //set the current pin state to use as our previous state
@@ -107,13 +116,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             pin_prev_state.insert(pin_numb, 0);
         }
 
-        }
-        // if info.delay > 0 {
-        //     let pin_number = &info.pin;
-        //     //let mut this_pin = pin_state.get_mut(pin_number).unwrap();
-        // }
-    
-
+    }
     
 
     let mut loop_count = 0;
@@ -146,11 +149,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             //read the pin state, the init function should have set it to an input pin
             let logic_state = this_pin.read();
             //convert the logic state to a simple int
-            if logic_state == rppal::gpio::Level::High {
-                *state = 1;
-            } else {
-                *state = 0;
-            }
+            *state = get_pin_state(logic_state);
         }
 
         if config_loop_sleep > 0 {
@@ -160,7 +159,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         debug!("pinloop start");
         //loop through each contact state
-        for (_id, info) in contacts.iter_mut() {
+        for (_id, info) in pin_config.iter_mut() {
             let pin_numb = &info.pin;
             let current_state = *pin_state.get(pin_numb).unwrap();
             let pin_prevstate = pin_prev_state[pin_numb]; //get old pin state

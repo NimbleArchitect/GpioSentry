@@ -14,14 +14,14 @@ use crate::utils::make_safe_url;
 
 pub struct PinConfig {
     pub data: String,
-    pub delay: i32,
+    pub delay: i32, //ro - delay read from config file
     pub label: String,
     pub location: String,
     pub method: u8,
     pub pin: u8,
     pub state: u8,
     pub trigger: u8,
-    pub timeout: i32
+    pub timeout: i32 //rw - countdown until trigger
 }
 
 impl Default for PinConfig {
@@ -74,7 +74,8 @@ fn set_method(pininfo:&mut PinConfig, value:String) {
     if c > 0 {
         match val.as_ref() {
             // Match a single value
-            "get" => {pininfo.method = 1},
+            "none" => {pininfo.method = 0},
+            "get"  => {pininfo.method = 1},
             "post" => {pininfo.method = 2},
             "exec" => {pininfo.method = 3},
             
