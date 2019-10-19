@@ -38,7 +38,7 @@ fn run_command(location: String) {
 //read spawn a seperate thread/process based on the method reqiested
 // fuction never returns a value
 pub fn do_action(method: u8, location: String, data: String) {
-
+    debug!("F:do_action:start");
     match method {
         // Match a single value
         //get

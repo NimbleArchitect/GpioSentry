@@ -11,7 +11,7 @@ use crate::utils::check_is_url;
 use crate::utils::make_safe_file;
 use crate::utils::make_safe_url;
 
-
+#[derive(Debug)]
 pub struct PinConfig {
     pub data: String,
     pub delay: i32, //ro - delay read from config file

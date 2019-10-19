@@ -20,7 +20,6 @@ pub fn init_pins(gpio: &rppal::gpio::Gpio , pindata: &HashMap<String, conf::PinC
 
     let mut new_pins = HashMap::new();
 
-    //let contact_pin = gpio.get(CONTACT_PIN)?.into_input();
     for (_id, info) in pindata {
         let pinnum = info.pin;
         let exists = new_pins.contains_key(&pinnum);

@@ -173,47 +173,51 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         debug!("pinloop start");
-        //loop through each contact state
+        //loop through each contact stategit
         for (_id, info) in pin_config.iter_mut() {
             let pin_numb = &info.pin;
             let current_state = *pin_state.get(pin_numb).unwrap();
             let pin_prevstate = pin_prev_state[pin_numb]; //get old pin state
             debug!("check - pin {}, current_state: {}, prev_state: {}", info.pin, current_state, pin_prevstate);
             //if state has changed
-            if pin_prevstate == current_state {
-                //nothing has changed so reset the timeout and move to the next pin
-                debug!("check - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
-                info.delay = info.delay;
+
+            //if trigger is the same as our previous state then we are testing for the state we was in,
+            // this is bad so we skip every pin config in this state, the effect of this is we only procees
+            // triggers that would move us into a new state
+            if info.trigger == pin_prevstate {
                 continue;
             }
-            debug!("check - pin {}, trigger: {}, current_state: {}", info.pin, info.trigger, current_state);    
+
+            if pin_prevstate == current_state {
+                //nothing has changed so reset the timeout and move to the next pin
+                debug!("no change - pin {}, timeout: {}, delay: {}", info.pin, info.timeout, info.delay);
+                info.timeout = {info.delay};
+                continue;
+            }
+            info!("trigger - pin {}, trigger: {}, current_state: {}", info.pin, info.trigger, current_state);    
             if info.trigger == current_state {
                 //we have a trigger, Go! Go! Go!
-                let mut timeout = 0;
+                let timeout = {info.timeout};
 
                 //compute timeout value
                 debug!("time_delay: {}", time_delay);
-                if time_delay > 0 {
-                    let pin_timeout = {info.delay};
-                    debug!("pin_timeout: {}", pin_timeout);
-                    timeout = pin_timeout - time_delay;
-                }
+
                 if timeout > 0 {
                     debug!("reduce - pin {}, timeout: {}, delay: {}", info.pin, timeout, info.delay);
-                    info.timeout = timeout;
+                    info.timeout = timeout - time_delay;
+                    continue;
                 }
 
                 if timeout <= 0 {
                     //we have timed out in the changed state, so now we need to fire the trigger
                     debug!("triggered pin {} at state {}", info.pin, current_state);
-                    info.timeout = info.delay; //reset our timeout
+                    info.timeout = {info.delay}; //reset our timeout
                     //now we change state and update prevstate
                     let state = pin_prev_state.get_mut(pin_numb).unwrap();
                     //TODO: need to create a cooldown value that will pause trigger for the pin until the 
                     // cooldown value has expired, this will help with double triggers on the doorbell
-                    *state = current_state;
-                    let changed_value = pin_prev_state.get_mut(pin_numb).unwrap();
-                    debug!("pin_prev_state for pin {} changed to {}", pin_numb, changed_value);
+                    *state = {current_state};
+                    debug!("pin_prev_state for pin {} is now set to {}", pin_numb, pin_prev_state[pin_numb]);
 
                     //with state now saved we can call the action that has been triggered
                     utils::do_action(info.method, info.location.to_string(), info.data.to_string());

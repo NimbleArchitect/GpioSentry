@@ -1,5 +1,5 @@
 [package]
-name = "gpio-test"
+name = "gpiosentry"
 version = "0.1.0"
 authors = ["NimbleArchitect <56797391+NimbleArchitect@users.noreply.github.com>"]
 edition = "2018"
