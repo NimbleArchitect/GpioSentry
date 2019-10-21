@@ -32,10 +32,10 @@ delay = 1
 # Command line
 
 * -c --config
-    Sets a custom config file")
+    Sets a custom config file
 
 * --loop-delay
-    sleep this many nano-seconds between loops")
-
+    sleep this many nano-seconds between loops
+    
 * --play-fair
-    gives up processing time at the end of every loo
+    gives up processing time at the end of every loop
