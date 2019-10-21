@@ -32,7 +32,7 @@ This project is built on a raspberry pi and as a result these instructions will 
 
 clone from GitHub
 ```
-git clone https://gist.github.com/109311bb0361f32d87a2.git
+git clone https://github.com/NimbleArchitect/GpioSentry.git
 cd GpioSentry
 ```
 
