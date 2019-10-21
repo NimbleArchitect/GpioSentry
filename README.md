@@ -5,6 +5,7 @@ gpio-watcher
 
 # Config file
 
+```
 [name] - can be any random string, generally used to descrip the pin
 pin - pin number in bcm format
 state - inital state that the pin should be during init
@@ -13,9 +14,11 @@ method - how we respond to a trigger event none/get/post/exec
 location - can be a command to execute or a url to connect too
 data = the data to send during the trigger event
 delay = time to wait before activating the trigger, in milliseconds
+```
 
 # Config file example
 
+```
 [main-light]
 pin = 18
 state = auto
@@ -24,7 +27,7 @@ method = post
 location = "https://example.com/api/lightswitch"
 data = ON
 delay = 1
-
+```
 
 # Command line
 
