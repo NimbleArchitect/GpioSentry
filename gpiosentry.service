@@ -1,0 +1,12 @@
+[Unit]
+Description=Gpio state watcher
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/gpiosentry
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
