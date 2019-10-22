@@ -221,7 +221,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         array_index += 1;
         // so we add the struct to the hash table        
         pin_settings.insert(array_index.to_string(), pininfo);
-        ///we save the state of the high triggers and the low triggers into seperate hashmaps
+        /// we save the state of the high triggers and the low triggers into seperate hashmaps
         if pin_trigger == 1 {
             pin_high.insert(pin_number, trigger_time);
         } else {
