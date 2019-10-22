@@ -4,9 +4,9 @@ Designed for and tested to run on a raspberry pi GpioSentry runs as a service an
 
 ## Features
 
-* constant checks for faster performance
-* able to delay loop cycles
-* can give up the CPU to play nice
+* Thousands of checks per second for a faster response
+* Ability to sleep during the loop cycle
+* Can yield/give up the CPU to play nice
 * easy to monitor pins
 * configurable delays
 * built in http push/pull requests
@@ -15,11 +15,11 @@ Designed for and tested to run on a raspberry pi GpioSentry runs as a service an
 
 ## How it works
 
-GpioSentry sits in a loop checking all gpio pins listed in the configuration file, once the state has been read another loop compares the trigger state and the previous pin state looking for a change that has lasted for at least the timeout period.  Once the trigger has been verified as valid the configured action is run GpioSentry does not check for the return value of any action and will only log that the action should have fired.  http timeouts are silently ignored and only repeat if the event is triggered again.
+GpioSentry sits in a loop checking all gpio pins listed in the configuration file, once the current pin state has been read another loop compares the trigger state and the previous pin state looking for a change that has lasted for at least the timeout period.  Once the trigger has been verified as valid the configured action is run GpioSentry does not check for the return value of any action and will only log that the action should have fired.  http timeouts are silently ignored and only repeat if the event is triggered again.
 
 ## Why?
 
-I'm in the process of designing my smart home and wanted to diy my own alarm system, originally I was using python to read the gpio pins but the response time wasn't fast enough.  During the testing phase I was able to open and close the door (with a 2 inch gap) fast enough that the trigger never fired and after plenty of reading about alarm response times, I started searching for faster languages.  After settling on rust I wrote two programs one to check the door bell and another to check the open state of the door, adjusting timeous and rebuilding quickly became annoying enough that I started searching for alternative solutions.  With Google not turning up anything worthwhile this project was born :)
+I'm in the process of setting up my smart home and wanted to diy my own alarm system, originally I was using python to read the gpio pins but the response time wasn't fast enough.  During the testing phase I was able to open and close the door (with a 2 inch gap) fast enough that the trigger never fired and after plenty of reading about alarm response times, I started searching for faster languages.  After settling on rust I wrote two programs one to check the door bell and another to check the open state of the door, adjusting timeous and rebuilding quickly became annoying enough that I started searching for alternative solutions.  With Google not turning up anything worthwhile this project was born :)
 
 
 ## Getting Started
@@ -39,11 +39,7 @@ cd GpioSentry
 
 ### Building
 
-for the debug build run
-```
-cargo build
-```
-or too build the release version run
+To build the release version run
 ```
 cargo build --release
 ```
@@ -53,7 +49,7 @@ this takes hours to run so your better off running the following which will keep
 ```
 nohup cargo build --release &
 ```
-then the progress can be checked with the following command
+then to check the progress run the following command
 
 ```
 cat nohup
@@ -65,13 +61,20 @@ The configuration file is a simple .ini file the section names can be anything w
 
 A list of the item names that are accepted for each key follows:
 
-* **pin**: gpio pin number as bcm
-* **state**: inital state that the pin should be during initialisation, if the pin is not in this state the trigger will fire
-* **trigger**: if the pin is in this state we call a trigger, can be high or low
-* **method**: how we respond to a trigger event none/get/post/exec
-* **location**: can be a command to execute or a url to connect too
-* **data**: the data to send during the trigger event
-* **delay**: time to wait before activating the trigger, in milliseconds.  the trigger will only for if this many milliseconds has passed.
+* **pin**: gpio pin number using the bcm numbering format
+* **state**: inital state that the pin should be during initialisation, if the pin is not in this state the trigger will fire.
+* **trigger**: if the pin changes to this state we call an action event using the method and location
+  The trigger can be set to:
+  * high: pin read as high.
+  * low: pin reads as low.
+* **method**: how we respond to a trigger event.
+  * none: no action, this has the effect of ignoring the event.
+  * get: http get request for the value of location.
+  * post: http post request to the location with the value of data passed as the request body.
+  * exec: call the content of location as an executable.
+* **location**: can be a command to execute or a url to connect to
+* **data**: the data to send during the trigger event, currently only valid for post requests.
+* **delay**: time to wait before activating the trigger, in milliseconds.  The trigger will only fire if this many milliseconds have passed.
 
 
 ### Example config
