@@ -1,7 +1,10 @@
-
+/// GpioSentry
+///
+/// Created by: NimbleArchitect
+///
 
 extern crate url;
-//use url::{Url, ParseError};
+
 use url::Url;
 use std::fs;
 use subprocess::Exec;
