@@ -194,9 +194,9 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         //create empty structure
         let mut pininfo = PinConfig::default();
 
-        ///TODO: we still need to verify that we have recieved a valid default set of new values
-        /// from the ini file
-        ///Loop through each item in the comfig file, saving any matching items to our pininfo struct
+        //TODO: we still need to verify that we have recieved a valid default set of new values
+        // from the ini file
+        //Loop through each item in the comfig file, saving any matching items to our pininfo struct
         for (key, value) in prop {
             
             match key.as_ref() {
@@ -221,7 +221,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         array_index += 1;
         // so we add the struct to the hash table        
         pin_settings.insert(array_index.to_string(), pininfo);
-        /// we save the state of the high triggers and the low triggers into seperate hashmaps
+        // we save the state of the high triggers and the low triggers into seperate hashmaps
         if pin_trigger == 1 {
             pin_high.insert(pin_number, trigger_time);
         } else {
@@ -229,7 +229,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         }
     }
     
-    ///from this we can loop through each pin comparing the high trigger with a matching pin number on the low trigger
+    //from this we can loop through each pin comparing the high trigger with a matching pin number on the low trigger
     for (_id, pininfo) in &pin_settings {
         let pin_number = pininfo.pin;
 
@@ -253,8 +253,8 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         };
         debug!("  value {}", low);
         
-        ///any pins that have a high trigger and a low trigger set are removed from both hashmaps
-        /// as we have a matching pair
+        //any pins that have a high trigger and a low trigger set are removed from both hashmaps
+        // as we have a matching pair
         if pin_high.contains_key(&pin_number) == true {
             if pin_low.contains_key(&pin_number) == true {
                 debug!("removing pair");
@@ -264,12 +264,12 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         }
     }
 
-    ///this leaves us with high triggers that dont have a matching low
+    //this leaves us with high triggers that dont have a matching low
     debug!("checking remaining high triggers");
     for (id, timeout) in pin_high {
         if timeout >= 1 {
-            ///so we create a low trigger automatically, this allows for our off state to stigger 
-            /// resetting the previous triggerd state 
+            //so we create a low trigger automatically, this allows for our off state to stigger 
+            // resetting the previous triggerd state 
             info!("missing trigger pin {}", id);
             array_index += 1;
             let mut pininfo = PinConfig::default();
@@ -280,7 +280,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         }
     }
 
-    ///do the same but now with the low triggers instead
+    //do the same but now with the low triggers instead
     debug!("checking remaining low triggers");
     for (id, timeout) in pin_low {
         if timeout >= 1 {
@@ -293,8 +293,8 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
             pin_settings.insert(array_index.to_string(), pininfo);
         }
     }
-    ///we should now be left with a list of pins with both a high and low trigger set
-    /// allowing us to trigger on and off for each pin
+    //we should now be left with a list of pins with both a high and low trigger set
+    // allowing us to trigger on and off for each pin
     pin_settings
 
 }
