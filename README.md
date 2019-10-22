@@ -65,13 +65,14 @@ The configuration file is a simple .ini file the section names can be anything w
 
 A list of the item names that are accepted for each key follows:
 
-* pin - pin number in bcm format
-* state - inital state that the pin should be during init
-* trigger - if the pin is in this state we call a trigger, can be high/low/both
-* method - how we respond to a trigger event none/get/post/exec
-* location - can be a command to execute or a url to connect too
-* data = the data to send during the trigger event
-* delay = time to wait before activating the trigger, in milliseconds
+* **pin**: gpio pin number as bcm
+* **state**: inital state that the pin should be during initialisation, if the pin is not in this state the trigger will fire
+* **trigger**: if the pin is in this state we call a trigger, can be high or low
+* **method**: how we respond to a trigger event none/get/post/exec
+* **location**: can be a command to execute or a url to connect too
+* **data**: the data to send during the trigger event
+* **delay**: time to wait before activating the trigger, in milliseconds.  the trigger will only for if this many milliseconds has passed.
+
 
 ### Example config
 
@@ -85,6 +86,9 @@ location = "https://example.com/api/lightswitch"
 data = ON
 delay = 1
 ```
+
+A full example config can be found in the **gpiosentry.conf** file.
+
 
 ### Command line
 
@@ -121,3 +125,38 @@ use the followomg to enable the service at boot
 sudo systemctl enable gpiosentry
 ```
 
+
+## Built With
+
+
+## Contributing
+
+
+## Versioning
+
+
+## Authors
+
+* **Me** - **Initial work**
+
+
+## License
+
+
+
+## Acknowledgments
+
+The following rust crates where directly used in the making of this program and I want to say a massive thank you to the developers.
+
+* [RPPAL](https://github.com/golemparts/rppal)
+* [reqwest](https://github.com/seanmonstar/reqwest)
+* [url](https://github.com/servo/rust-url)
+* [rust-ini](https://github.com/zonyitoo/rust-ini)
+* [subprocess](https://github.com/hniksic/rust-subprocess)
+* [env_logger](https://github.com/sebasmagri/env_logger)
+* [clap](https://github.com/clap-rs/clap)
+
+
+* Hat tip to anyone whose code was used
+* Inspiration
+* etc
