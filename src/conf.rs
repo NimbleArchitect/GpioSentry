@@ -98,13 +98,13 @@ fn set_method(pininfo:&mut PinConfig, value:String) {
     let c = val.len();
     if c > 0 {
         match val.as_ref() {
-            /// doesn't run any action
+            // doesn't run any action
             "none" => {pininfo.method = 0},
-            /// http get request
+            // http get request
             "get"  => {pininfo.method = 1},
-            /// http post request
+            // http post request
             "post" => {pininfo.method = 2},
-            /// attempts to run a program as specified by location
+            // attempts to run a program as specified by location
             "exec" => {pininfo.method = 3},
             
             _ => panic!("invalid method found, method {} was found but I expected get, post or exec", val)
