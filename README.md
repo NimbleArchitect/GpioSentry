@@ -104,11 +104,7 @@ A full example config can be found in the **gpiosentry.conf** file.
 
 ##  Service setup
 
-for the debug version use this to copy the program to the users bin folder
-```
-sudo cp target/debug/gpiosentry /usr/local/bin/
-```
-and use thos to copy the release build
+for the release version use this to copy the program to the users bin folder
 ```
 sudo cp target/release/gpiosentry /usr/local/bin/
 ```
@@ -140,7 +136,7 @@ sudo systemctl enable gpiosentry
 
 ## Authors
 
-* **Me** - **Initial work**
+* **NimbleArchitect** - **Initial work**
 
 
 ## License
@@ -149,7 +145,7 @@ sudo systemctl enable gpiosentry
 
 ## Acknowledgments
 
-The following rust crates where directly used in the making of this program and I want to say a massive thank you to the developers.
+The following rust crates were used in the making of this program and I want to say a massive thank you to the developers.
 
 * [RPPAL](https://github.com/golemparts/rppal)
 * [reqwest](https://github.com/seanmonstar/reqwest)
