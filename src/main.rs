@@ -39,7 +39,7 @@ mod gpiopins;
 
 fn check_args() -> clap::ArgMatches<'static> {
 
-    let matches = App::new("gpio-watcher")
+    let matches = App::new("GpioSentry")
         .version("0.1.0")
         .about("Watches gpio pins on a raspberry pi and reacts to changes in the pins state")
         .arg(
@@ -62,6 +62,11 @@ fn check_args() -> clap::ArgMatches<'static> {
             Arg::with_name("play-fair")
                 .long("play-fair")
                 .help("gives up processing time at the end of every loop")
+        )
+        .arg(
+            Arg::with_name("time-loops")
+                .long("time-loops")
+                .help("count and display the number of loops processed evey second")
         )
 
         .get_matches();
@@ -91,9 +96,10 @@ fn get_pin_state(state_value: rppal::gpio::Level) -> u8{
 fn main() -> Result<(), Box<dyn Error>> {
     //TODO: read command line arguments to set configurtaion file location
     //env_logger::init().unwrap();
-    let mut config_filename = "/etc/gpio-watcher.conf";
+    let mut config_filename = "/etc/gpiosentry.conf";
     let mut config_loop_sleep = 0;
     let mut config_play_fair = 0;
+    let mut config_time_loops = 0;
 
     env_logger::from_env(Env::default().default_filter_or("info")).init();
     debug!("Start");
@@ -112,16 +118,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("play nice is enabled");
         config_play_fair = 1;
     }
-    
+    if args.is_present("time-loops") {
+        println!("loop counting is enabled");
+        config_time_loops = 1;
+    }
+
     //read configuration file    
     let gpio = Gpio::new()?;
     debug!("reading config file");
     //read_conf returns a hash table of the pin configuration 
     let mut pin_config = conf::read_conf(config_filename.to_string());
 
-    info!("initilising pins..");
+    info!("initialising pins..");
     let mut pin_state = gpiopins::init_pins(&gpio, &pin_config);
-    debug!("finished initilising pins");
+    debug!("finished initialising pins");
     let mut pin_prev_state: HashMap<u8, u8> = HashMap::new();
 
 
@@ -246,8 +256,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         loop_count += 1;
         time_taken += time_delay;
         // let time_taken = time_now.elapsed().as_millis();
-        if time_taken >= 1000 {
-            debug!("run {} loops in {} ms", loop_count, time_taken);
+        if time_taken >= 30000 {
+            if config_time_loops == 1 {
+                let loop_per_sec = loop_count / (time_taken / 1000);
+                println!("run {} loops per second", loop_per_sec);
+                println!("total {} loops in {} ms", loop_count, time_taken);
+            }
             loop_count = 1;
             time_taken = 0;
             //break;
