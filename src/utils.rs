@@ -24,7 +24,7 @@ use subprocess::Exec;
 use std::thread;
 
 
-fn url_send(method: u8, url: String, data: String) {
+async fn url_send(method: u8, url: String, data: String) {
 //0 = get
 //1 = post
 
@@ -34,12 +34,14 @@ fn url_send(method: u8, url: String, data: String) {
         let _res = client.post(&url)
             .body(data)
             .send()
+            .await
             .expect("Failed to send request");
     } else {
         println!("calling url \"{}\"", url);
         let _res = client.get(&url)
             //.body(data)
             .send()
+            .await
             .expect("Failed to send request");
     }
 
@@ -48,7 +50,8 @@ fn url_send(method: u8, url: String, data: String) {
 fn run_command(location: String) {
     //TODO: check that the program exists?
     println!("starting command: {}", location);
-    Exec::shell(location);
+    let _exit_status = Exec::cmd(location).join();
+    
 }
 
 //read spawn a seperate thread/process based on the method reqiested

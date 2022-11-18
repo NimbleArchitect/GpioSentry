@@ -197,7 +197,7 @@ pub fn read_conf(filename:String) -> HashMap<String, PinConfig> {
         //TODO: we still need to verify that we have recieved a valid default set of new values
         // from the ini file
         //Loop through each item in the comfig file, saving any matching items to our pininfo struct
-        for (key, value) in prop {
+        for (key, value) in prop.iter() {
             
             match key.as_ref() {
                 // Match each key, and call a function to pupulate the item in the pininfo struct
