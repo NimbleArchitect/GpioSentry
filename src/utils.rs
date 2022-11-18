@@ -24,25 +24,21 @@ use subprocess::Exec;
 use std::thread;
 
 
-async fn url_send(method: u8, url: String, data: String) {
-//0 = get
-//1 = post
+fn url_send(method: u8, url: String, data: String) {
+    //0 = get
+    //1 = post
+    debug!("F:url_send:start");
 
-    let client = reqwest::Client::new();
     if method == 1 {
         println!("sending post data \"{}\" to \"{}\"", data, url);
-        let _res = client.post(&url)
+        let _response = reqwest::blocking::Client::new()
+            .post(url)
             .body(data)
-            .send()
-            .await
-            .expect("Failed to send request");
+            .send();
+            // .expect("Failed to send request");
     } else {
         println!("calling url \"{}\"", url);
-        let _res = client.get(&url)
-            //.body(data)
-            .send()
-            .await
-            .expect("Failed to send request");
+        let _resp = reqwest::blocking::get(url);
     }
 
 }
@@ -58,6 +54,8 @@ fn run_command(location: String) {
 // fuction never returns a value
 pub fn do_action(method: u8, location: String, data: String) {
     debug!("F:do_action:start");
+    debug!("F:do_action:method = {}", method);
+
     match method {
         // Match a single value
         //get
@@ -65,11 +63,17 @@ pub fn do_action(method: u8, location: String, data: String) {
             //do nothing
         },
         1 => {
-            thread::spawn(|| url_send(0, location, data));
+            let getcall = thread::spawn(|| {
+                url_send(0, location, data);
+            });
+            getcall.join().expect("unable to run")
         },
         //post
         2 => {
-            thread::spawn(|| url_send(1, location, data));
+            let getcall =thread::spawn(|| {
+                url_send(1, location, data);
+            });
+            getcall.join().expect("unable to run")
         },
         //exec
         3 => {

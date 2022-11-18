@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 rppal = "0.14"
-reqwest = "0.11.13"
+reqwest = { version = "0.11.13", features = ["blocking"] }
 url = "2.3.1"
 rust-ini = "0.18.0"
 subprocess = "0.2.9"
